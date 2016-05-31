@@ -1,0 +1,44 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage<ContentModels.SearchDocType>
+@using UmbracoExamine;
+@using ContentModels = Umbraco.Web.PublishedContentModels;
+@{
+	Layout = "Master.cshtml";
+}
+
+@{
+	var root = Umbraco.TypedContentAtXPath("//homePage").Single();
+	
+	//Get The Search Page To Use
+	var searchPage = Umbraco.TypedContentAtXPath("//searchDocType").Single();
+	
+            //These are the default Examine Initializers but we are using the "content" External Searcher here instead see below
+            string luceneString = string.Empty;
+            Examine.SearchCriteria.ISearchCriteria filter = null;
+            System.Linq.IOrderedEnumerable<Examine.SearchResult> searchResults = null;
+            string searchTerm = Request.QueryString["query"];
+            try
+            {
+                var Searcher = ExamineManager.Instance.SearchProviderCollection["MySearchSearcher"];
+                var searchCriteria = Searcher.CreateSearchCriteria(IndexTypes.Content);
+
+                //Grab the Query and strip our leading and trailing spaces. Strip out quoted queries too
+                // Sample Raw Query: +ajgSiteSearchScope:Landstar +(nodeName:(+unladen)^5 contents:unladen)
+                //TODO: Do a better job with REgex to strip the quotes and offending + and - chars
+                searchTerm = searchTerm.Trim().Replace("\"", "").Replace(" +", " ").Replace(" -", " ").Replace("+ ", " ").Replace("- ", " ");
+
+                luceneString = "-hideFromSearch:" + 1 + " + (nodeName:(+" + searchTerm.Replace(" ", " +") + ")^5 ";
+                luceneString += "contents:" + searchTerm.Replace(" ", " contents:") + ")";
+                filter = searchCriteria.RawQuery(luceneString);
+                searchResults = Searcher.Search(filter).OrderByDescending(x => x.Score);
+            }
+            catch (Exception ex)
+            {
+               
+
+            }
+
+            int? test = null;
+
+            
+	
+}
